@@ -1,0 +1,36 @@
+name: Build vendor.zip for Gujranwala.pk
+
+on:
+  workflow_dispatch:  # Manual trigger from GitHub UI
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, openssl, gd, curl, zip, json, bcmath, xml
+
+      - name: Download Laravel
+        run: |
+          curl -L https://github.com/laravel/laravel/archive/refs/heads/master.zip -o laravel.zip
+          unzip laravel.zip
+          mv laravel-master laravel-project
+          cd laravel-project
+          composer require laravel/socialite livewire/livewire --no-interaction --no-scripts
+          composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+      - name: Package vendor.zip
+        run: |
+          cd laravel-project
+          zip -qr ../vendor.zip vendor/
+          ls -lh ../vendor.zip
+
+      - name: Upload vendor.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendor
+          path: vendor.zip
+          retention-days: 7
